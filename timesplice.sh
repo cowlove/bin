@@ -79,3 +79,56 @@ done
 ffmpeg -safe 0 -f concat -i $output.txt -vf "${vf}" -crf $CRF -ab 128k -y $opts $out
 
 #rm "$output".*
+
+
+exit
+# Everything below is a sample input file 
+# Name of output file
+OUTPUT /tmp/out.mp4
+
+# Default speed for portions of video files that aren't explicitly specified
+# Use 0 to not show unspecified portions at all
+DEFAULT 200
+
+# Override input file suffixes, to use LRV instead of MP4 
+INPUT_SUFFIX_OVERRIDE LRV
+
+
+# Title text specifications 
+TITLE_START 1  			# Start time of titles 
+TITLE_TIME 2   			# Seconds per title line 
+TITLE Lazy     
+TITLE_COLOR red 		# Change title colors
+TITLE Low-Angle 	
+TITLE_SIZE 2    		# Change title size (smaller is bigger) 
+TITLE Pow       		 
+
+
+# List next input file 
+INPUT GH010119.MP4
+
+DEFAULT 0   # skip unspecified portions 
+# Explicit sections of video to show:
+# <start seconds> <end seconds> [<speed>]
+211 216
+DEFAULT 200 
+46 50
+182 185
+262 266
+350 354
+390 392
+920 922
+
+INPUT GH010120.MP4
+314 317
+
+INPUT GH010119.MP4
+61 67
+DEFAULT 0 
+
+
+# You can use END to stop processing early 
+END
+
+
+
