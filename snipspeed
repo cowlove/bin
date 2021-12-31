@@ -1,0 +1,48 @@
+#!/bin/bash -x
+
+#usage snipspeed <begin sec> <end sec> <speed> <input> <output>
+
+float_scale=2
+function float_eval()
+{
+    local stat=0
+    local result=0.0
+    if [[ $# -gt 0 ]]; then
+        result=$(echo "scale=$float_scale; $*" | bc -q 2>/dev/null)
+        stat=$?
+        if [[ $stat -eq 0  &&  -z "$result" ]]; then stat=1; fi
+    fi
+    echo $result
+    return $stat
+}
+
+
+START=$1
+END=$2
+SPEED=$3
+INFILE="$4" 
+OUTFILE="$5"
+ABITRATE=128k
+CRF=20
+TEMPA=/tmp/snipspeed.$$.A.wav
+TEMPB=/tmp/snipspeed.$$.B.avi
+TEMPV=/tmp/snipspeed.$$.mp4	
+LEN=$(float_eval "$END - $START") 	
+touch $TEMPA $TEMPB
+SOXSPEED1=1
+SOXSPEED2=$SPEED
+
+if [[ $SPEED -gt 100 ]]; then
+	SOXSPEED1=$(float_eval "$SPEED / 100")
+	SOXSPEED2=100
+fi
+
+mencoder -quiet "$INFILE" -idx -ss $START -endpos $LEN -oac pcm -ovc copy -o $TEMPB 
+ffmpeg -v 0 -i "$TEMPB" \
+	-y -f sox -map 0:1 - \
+	-crf $CRF -ab $ABITRATE -vf "setpts=PTS/$SPEED" -map 0:0 $TEMPV  \
+	| sox -p -t sox - tempo $SOXSPEED1 |  sox -p $TEMPA tempo $SOXSPEED2
+ 	
+ffmpeg -v 0 -i $TEMPA -i $TEMPV -crf $CRF -ab $ABITRATE -y -strict -2 "$OUTFILE"
+
+rm -f "$TEMPA" "$TEMPV" "$TEMPB"
