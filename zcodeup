@@ -1,0 +1,5 @@
+#!/bin/bash
+FILE="`ls -1tr ~/Downloads/*.zcode | tail -1`"
+curl -v --form "file=@$FILE" http://192.168.4.3/upload.cgi  \
+	&& printf "\n\nUploaded $FILE\n\n"
+
