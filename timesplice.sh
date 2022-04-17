@@ -13,7 +13,8 @@ titletime=2
 titlesize=4
 titlecolor=black
 
-vf="copy"
+VF="copy"
+TSPEC="copy"
 
 #while true; do 
 while read startsec endsec speed; do  
@@ -26,25 +27,27 @@ while read startsec endsec speed; do
 	if [[ "$startsec" == "TITLE_SIZE" ]]; then titlesize=$endsec; continue; fi
 	if [[ "$startsec" == "TITLE_TIME" ]]; then titletime=$endsec; continue; fi
 	if [[ "$startsec" == "TITLE_START" ]]; then titlet=$endsec; continue; fi
+	if [[ "$startsec" == "VF" ]]; then VF=$endsec; continue; fi
 	
 	if [[ "$startsec" == "TITLE" ]]; then 
 		titlestart=$titlet
 		titleend=$(($titlet + $titletime))
 		titlet=$titleend
 		T="$endsec $speed"
-		vf="${vf},drawtext=fontsize=(h/${titlesize}):fontcolor=${titlecolor}:fontfile=FreeSerif.ttf:text=\'$T\':y=h/2:x=w/2-text_w/2:alpha=.5:enable=between\(t\\,${titlestart}\\,${titleend}\)"
+		TSPEC="${TSPEC},drawtext=fontsize=(h/${titlesize}):fontcolor=${titlecolor}:fontfile=FreeSerif.ttf:text=\'$T\':y=h/2:x=w/2-text_w/2:alpha=.5:enable=between\(t\\,${titlestart}\\,${titleend}\)"
 		continue;
 	fi
 
 	if [[ "$startsec" == "OPTS" ]]; then opts="$endsec $speed"; continue; fi
 	if [[ "$startsec" == "INPUT_SUFFIX_OVERRIDE" ]]; then isuffix="$endsec"; continue; fi
 	if [[ "$startsec" == "OUTPUT" ]]; then out="$endsec"; continue; fi 
+	if [[ "$startsec" == "INPUT_FOLDER" ]]; then INPUT_FOLDER="$endsec"/; continue; fi
 	if [[ "$startsec" == "INPUT" ]]; then
 		if [[ "$file" != "" ]] && (($defaultspeed > 0)); then 
 			fno=$(($fno + 1))
 			snipspeed  $lastsec 999999 $defaultspeed "$file" "$output.${fno}.$intfmt"	< /dev/null
 		fi
-		file="$endsec"; 
+		file="${INPUT_FOLDER}$endsec"; 
 		if [[ "$isuffix" != "" ]]; then
 			file=`echo $file | sed "s/\.[^.]*/.$isuffix/"`
 			file=`echo $file | sed "s/GH/GL/"`
@@ -76,7 +79,7 @@ for (( f=1; f <= $fno ; f++ )); do
    echo file $output.${f}.$intfmt >> $output.txt
 done
 
-ffmpeg -safe 0 -f concat -i $output.txt -vf "${vf}" -crf $CRF -ab 128k -y $opts $out
+ffmpeg -safe 0 -f concat -i $output.txt -vf "${VF},${TSPEC}" -crf $CRF -ab 128k -y $opts $out
 
 #rm "$output".*
 

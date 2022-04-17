@@ -1,0 +1,24 @@
+#!/usr/bin/python3 -u
+import re
+import subprocess
+import sys
+import os
+# TODO: stl_transform only works on binary STL files
+
+process = subprocess.Popen(['stl_bbox', sys.argv[1]], stdout=subprocess.PIPE)
+line = process.stdout.readline().decode('utf-8')
+#print(line)
+m = re.search("Extents:\s*" + 
+    "\(([+-]?[0-9.]+),\s*([+-]?[0-9.]+),\s*([+-]?[0-9.]+)\s*\)" + 
+    "\s*-\s*" +
+    "\(([+-]?[0-9.]+),\s*([+-]?[0-9.]+),\s*([+-]?[0-9.]+)\s*\)" 
+, line)
+if (m):
+    x = -(float(m[1]) + float(m[4])) / 2
+    y = -(float(m[2]) + float(m[5])) / 2
+    z = -float(m[3])
+    cmd = (('stl_transform -tx %f -ty %f -tz %f "' + sys.argv[1] + '" "' + sys.argv[2] + '"') 
+        % (x, y, z))
+    #print(cmd)
+    os.system(cmd)
+
