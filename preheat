@@ -1,0 +1,4 @@
+#!/bin/bash -x 
+octoprint-cli -v temp bed 60
+octoprint-cli -v temp extruder 200
+

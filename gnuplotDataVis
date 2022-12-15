@@ -1,0 +1,84 @@
+#!/usr/bin/perl
+# Animate live data using gnuplot
+# usage: gnuplotDataVis [gnuplot-using-spec] < data
+# use 'f' for data file in plotspec
+# eg: cat /dev/random | gnuplotDataVis --preplot 'set title "TI";' --plotspec 'f u 1 w l title "whatev", f u 2 ax x1y2"
+# eg: cat /dev/ttyAMA0 | gnuplotDataVis --plotspec 'f u 1'
+
+
+$monitorSize=`xrandr | awk '/\*/{sub(/x/,\",\");print \$1; exit}'`;
+print "MONIOR SIZE: $monitorSize";
+
+
+$first = 1;
+$showRms = 0;
+$period = 50;
+$plotSpec = 'f u 1';
+$preplot = 'set style data line; set title "TITLE"';
+while(1) { 
+	if ($ARGV[0] =~ /--rms/) {
+		$showRms = 1;
+		shift;
+	} elsif ($ARGV[0] =~ /--period/) {
+		shift;
+		$period = shift;
+	} elsif ($ARGV[0] =~ /--plotspec/ || $ARGV[0] =~ /-ps/) {
+		shift;
+		$plotSpec = shift;
+	} elsif ($ARGV[0] =~ /--preplot/) {
+		shift;
+		$preplot = shift;
+	} else {
+		last;
+	}
+}
+
+open GNUPLOT, "|gnuplot";
+	{ my $ofh = select GNUPLOT;
+	  $| = 1;
+	  select $ofh;
+	}
+# set term wxt persist 
+print GNUPLOT "f=\"-\";set y2tic; set ytic nomirror; set grid; set key noautotitle; set term wxt size $monitorSize	; $preplot\n";
+
+while(<>) {
+	push @hist, $_;
+	@tokens = split ' ';
+	for my $n (0 .. $#tokens) {
+		if ($first == 1) { 
+			$sums[$n] = 0;
+			$ssq[$n] = 0;
+		}
+		$sums[$n] += $tokens[$n];
+		$ssq[$n] += $tokens[$n] * $tokens[$n];
+	}
+	$first = 0;
+	if ($#hist + 1 == $period || eof()) {
+		@tokens = split ' ', shift @hist;
+		for my $n (0 .. $#tokens) {
+			$avg = $sums[$n] / $period;
+			print $avg;
+			print " ";
+			if ($showRms) { 
+				print $ssq[$n] / $period - $avg * $avg;
+				print " ";
+			}
+			$sums[$n] -= $tokens[$n];
+			$ssq[$n] -= $tokens[$n] * $tokens[$n];
+		}
+		print "\n";
+	}
+	
+	if ($period > 0 || eof()) { 
+		print GNUPLOT "plot $plotSpec\n";
+		for my $n (0 .. $#hist) {
+			print GNUPLOT $hist[$n];
+		}	
+		print GNUPLOT "e\n";
+	}
+
+}
+
+
+print GNUPLOT "pause 1111\n";
+

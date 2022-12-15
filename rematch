@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+import sys
+import re
+import fileinput
+import io 
+
+pat = sys.argv.pop(1)
+
+def openhook(filename, mode):
+      return open(filename, mode, errors='ignore')
+  
+
+
+def process(l):
+    m = re.search(pat, l)
+    if m:
+        print(" ".join(m.groups()))
+
+if len(sys.argv) > 1:
+	for line in fileinput.input(openhook=openhook):
+		process(line)
+else: 	
+	for line in	io.TextIOWrapper(sys.stdin.buffer, errors='ignore'):
+		process(line)
+
+
+		
+
+	
+
